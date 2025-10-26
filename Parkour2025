@@ -1,0 +1,114 @@
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
+
+namespace Parkour2D
+{
+    public class Game1 : Game
+    {
+        private GraphicsDeviceManager _graphics;
+        private SpriteBatch _spriteBatch;
+
+        Texture2D playerTexture;
+        Vector2 playerPosition;
+        Vector2 playerVelocity;
+        bool isGrounded;
+
+        List<Rectangle> platforms;
+        Texture2D platformTexture;
+
+        public Game1()
+        {
+            _graphics = new GraphicsDeviceManager(this);
+            Content.RootDirectory = "Content";
+            IsMouseVisible = true;
+        }
+
+        protected override void Initialize()
+        {
+            playerPosition = new Vector2(100, 100);
+            playerVelocity = Vector2.Zero;
+            isGrounded = false;
+
+            platforms = new List<Rectangle>
+            {
+                new Rectangle(0, 400, 800, 50),
+                new Rectangle(200, 350, 100, 20),
+                new Rectangle(400, 300, 100, 20),
+                new Rectangle(600, 250, 100, 20)
+            };
+
+            base.Initialize();
+        }
+
+        protected override void LoadContent()
+        {
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            // Crea texturas simples de color
+            playerTexture = new Texture2D(GraphicsDevice, 40, 40);
+            Color[] playerColor = new Color[40 * 40];
+            for (int i = 0; i < playerColor.Length; i++) playerColor[i] = Color.Orange;
+            playerTexture.SetData(playerColor);
+
+            platformTexture = new Texture2D(GraphicsDevice, 1, 1);
+            platformTexture.SetData(new[] { Color.Gray });
+        }
+
+        protected override void Update(GameTime gameTime)
+        {
+            KeyboardState ks = Keyboard.GetState();
+
+            // Movimiento horizontal
+            if (ks.IsKeyDown(Keys.Left)) playerPosition.X -= 5f;
+            if (ks.IsKeyDown(Keys.Right)) playerPosition.X += 5f;
+
+            // Salto
+            if (ks.IsKeyDown(Keys.Space) && isGrounded)
+            {
+                playerVelocity.Y = -12f;
+                isGrounded = false;
+            }
+
+            // Gravedad
+            playerVelocity.Y += 0.5f;
+            playerPosition += playerVelocity;
+
+            Rectangle playerRect = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerTexture.Width, playerTexture.Height);
+            isGrounded = false;
+
+            foreach (var plat in platforms)
+            {
+                if (playerRect.Intersects(plat) && playerVelocity.Y >= 0)
+                {
+                    playerPosition.Y = plat.Y - playerTexture.Height;
+                    playerVelocity.Y = 0;
+                    isGrounded = true;
+                }
+            }
+
+            base.Update(gameTime);
+        }
+
+        protected override void Draw(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+
+            _spriteBatch.Begin();
+
+            // Dibujar jugador
+            _spriteBatch.Draw(playerTexture, playerPosition, Color.White);
+
+            // Dibujar plataformas
+            foreach (var plat in platforms)
+            {
+                _spriteBatch.Draw(platformTexture, plat, Color.White);
+            }
+
+            _spriteBatch.End();
+
+            base.Draw(gameTime);
+        }
+    }
+}
